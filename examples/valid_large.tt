@@ -1,0 +1,57 @@
+room hall_a capacity 100;
+room hall_b capacity 80;
+room hall_c capacity 60;
+room hall_d capacity 120;
+
+invigilator prof_x;
+invigilator prof_y;
+invigilator prof_z;
+invigilator prof_w;
+
+group cse_a size 75;
+group cse_b size 60;
+group ece_a size 60;
+group ece_b size 50;
+group mech_a size 90;
+
+exam CS101
+ room hall_a
+ invigilator prof_x
+ students cse_a
+ slot 1;
+
+exam CS102
+ room hall_a
+ invigilator prof_x
+ students cse_a
+ slot 2;
+
+exam CS201
+ room hall_b
+ invigilator prof_y
+ students cse_b
+ slot 1;
+
+exam EC101
+ room hall_c
+ invigilator prof_z
+ students ece_a
+ slot 1;
+
+exam EC201
+ room hall_c
+ invigilator prof_z
+ students ece_b
+ slot 2;
+
+exam ME101
+ room hall_d
+ invigilator prof_w
+ students mech_a
+ slot 1;
+
+exam ME201
+ room hall_d
+ invigilator prof_w
+ students mech_a
+ slot 2;
