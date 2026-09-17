@@ -1,0 +1,10 @@
+room hall_a capacity 100;
+
+invigilator prof_x;
+group cse_a size 80;
+
+exam CS101
+ room hall_b
+ invigilator prof_x
+ students cse_a
+ slot 1;
