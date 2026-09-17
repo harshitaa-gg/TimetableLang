@@ -3,7 +3,10 @@
 main.py
 =======
 
-Main compiler driver for TimetableLang — PHASE 1 + PHASE 2 + PHASE 3.
+Main compiler driver for TimetableLang:
+  Phase 1 (Lexer + Parser + AST)
+  Phase 2 (Semantic Analyzer + Symbol Tables)
+  Phase 3 (Constraint-Aware Timetable Generator + Independent Verifier)
 
 Usage:
     python main.py <path-to-source-file>.tt [--max-slots N]
@@ -15,31 +18,43 @@ Options:
                     Lowering this is how you test the case where no
                     valid timetable exists.
 
-Pipeline implemented:
+Architecture & Pipeline:
 
-    SOURCE FILE
-       |
-    LEXICAL ANALYSIS     (src/lexer.py)                -- Phase 1
-       |
-    TOKENS
-       |
-    SYNTAX ANALYSIS      (src/parser.py)               -- Phase 1
-       |
-    AST                  (src/ast_nodes.py)            -- Phase 1
-       |
-    SEMANTIC ANALYSIS    (src/semantic_analyzer.py)    -- Phase 2
-       |
-    SYMBOL TABLES + VALIDATION RESULT
-       |
-    TIMETABLE GENERATION (src/timetable_generator.py)  -- Phase 3
-       |
-    FINAL EXAMINATION TIMETABLE
+    SOURCE FILE (.tt)
+           │
+           ▼
+    [1] LEXICAL ANALYSIS     (src/lexer.py)              -- Phase 1
+           │ Tokens
+           ▼
+    [2] SYNTAX ANALYSIS      (src/parser.py)             -- Phase 1
+           │ Parse Tree / Nodes
+           ▼
+    [3] ABSTRACT SYNTAX TREE (src/ast_nodes.py)          -- Phase 1
+           │ AST Representation
+           ▼
+    [4] SEMANTIC ANALYSIS    (src/semantic_analyzer.py)  -- Phase 2
+           │ Validated AST + Symbol Tables
+           ▼
+    [5] TIMETABLE GENERATOR  (src/timetable_generator.py)-- Phase 3
+           │ Generated Timetable (Backtracking + Constraints)
+           ▼
+    [6] TIMETABLE VERIFIER   (src/timetable_generator.py)-- Phase 3
+           │ Independent Conflict & Constraint Verification
+           ▼
+    [7] FINAL EXAMINATION TIMETABLE
 
-Each phase is a gate: if a phase fails, the later phases are not
-attempted, and the driver prints a single clear COMPILATION RESULT line.
+Each phase serves as a strict gate: if any phase fails, compilation aborts
+immediately with a descriptive error message.
 """
 
 import sys
+
+# Ensure UTF-8 output encoding across Windows / different terminal environments
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 from src.lexer import Lexer, LexicalError
 from src.parser import Parser, SyntaxAnalysisError
@@ -54,14 +69,14 @@ from src.timetable_generator import (
     TimetableGenerationError,
     format_timetable,
     format_timetable_by_slot,
+    verify_timetable,
 )
 
 
 def run_compiler(source_path: str, max_slots: int = None) -> bool:
     """
-    Runs the full Phase 1 + Phase 2 + Phase 3 pipeline (lexer -> parser ->
-    AST -> semantic analyzer -> timetable generator) on the given source
-    file and prints progress / results to the console.
+    Runs the complete 6-stage compiler pipeline on the given source file
+    and prints progress and results to the console.
 
     Args:
         source_path: path to the .tt source file.
@@ -69,12 +84,12 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
             generator may use.
 
     Returns:
-        True if the program compiled AND a valid timetable was generated.
-        False otherwise.
+        True if the program compiled, generated a timetable, and passed
+        independent verification. False otherwise.
     """
     print("=" * 60)
-    print("TimetableLang Compiler - Phase 1 + Phase 2 + Phase 3")
-    print("(Lexer + Parser + Semantic Analyzer + Timetable Generator)")
+    print("TimetableLang Compiler Pipeline")
+    print("Lexer -> Parser -> AST -> Semantic Analyzer -> Generator -> Verifier")
     print(f"Source file: {source_path}")
     if max_slots is not None:
         print(f"Available slots: {max_slots}")
@@ -140,9 +155,6 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
         print(f"      {line}")
 
     # --- Step 5: Timetable Generation (Phase 3) -----------------------------
-    # Only reached when lexical, syntax and semantic analysis have all
-    # succeeded. The generator reuses the analyzer's symbol tables; it does
-    # not re-read the source, the tokens, or bypass validation.
     print("\n[5] TIMETABLE GENERATION")
     generator = TimetableGenerator(analyzer, max_slots=max_slots)
     try:
@@ -155,10 +167,22 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
         return False
 
     print("    TIMETABLE GENERATION: SUCCESS")
-    print(f"    {len(timetable.assignments)} exam(s) assigned.")
+    print(f"    {len(timetable.assignments)} exam(s) assigned across {len(timetable.slots_used())} slot(s).")
 
-    # --- Step 6: Final Timetable -------------------------------------------
-    print("\n[6] FINAL TIMETABLE\n")
+    # --- Step 6: Independent Timetable Verification -----------------------
+    print("\n[6] TIMETABLE VERIFICATION")
+    violations = verify_timetable(timetable, analyzer=analyzer, max_slots=max_slots)
+    if violations:
+        print("    TIMETABLE VERIFICATION: FAILED")
+        for v in violations:
+            print(f"    - {v}")
+        print("\nCOMPILATION RESULT: FAILED (timetable verification error)")
+        return False
+
+    print("    TIMETABLE VERIFICATION: SUCCESS (0 conflicts or violations detected)")
+
+    # --- Step 7: Final Timetable Output ------------------------------------
+    print("\n[7] FINAL EXAMINATION TIMETABLE\n")
     print(format_timetable(timetable))
 
     print("\n    Slot-by-slot view:")
@@ -167,19 +191,17 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
 
     print("\n" + "=" * 60)
     print("COMPILATION RESULT: SUCCESS")
-    print("Program successfully compiled and timetable generated.")
+    print("Program successfully compiled and verified timetable generated.")
     print("=" * 60)
     return True
 
 
 def parse_arguments(argv):
     """
-    Very small hand-written argument parser, in keeping with the rest of the
-    project (standard library only, nothing clever).
+    Small hand-written argument parser.
 
     Returns:
-        (source_path, max_slots) on success, or None if the arguments were
-        not understood.
+        (source_path, max_slots) on success, or None on syntax error.
     """
     source_path = None
     max_slots = None

@@ -767,21 +767,51 @@ def format_timetable_by_slot(timetable: Timetable) -> str:
     return "\n".join(out)
 
 
-def verify_timetable(timetable: Timetable) -> List[str]:
+def verify_timetable(
+    timetable: Timetable,
+    analyzer: Optional[Any] = None,
+    max_slots: Optional[int] = None,
+) -> List[str]:
     """
     Independently re-check a finished timetable and return a list of
     violations (empty list == valid).
 
     The generator already guarantees validity; this function exists so that
-    the tests -- and anyone reviewing the project -- can confirm the output
-    without trusting the algorithm that produced it.
+    the tests, pipeline, and anyone reviewing the project can independently
+    confirm the output without trusting the algorithm that produced it.
+
+    Checks performed:
+    1. Valid slot bounds (slot >= 1 and slot <= max_slots if provided).
+    2. No room double-booking in any slot.
+    3. No invigilator double-booking in any slot.
+    4. No student group double-booking in any slot.
+    5. If `analyzer` is passed:
+       - Every exam from the source program is scheduled.
+       - Room capacity constraint (room.capacity >= group.size).
+       - Resource declaration existence (room, invigilator, group exist).
+       - Fixed (pinned) slots match their requested source slot.
     """
     problems: List[str] = []
     seen_rooms: Dict[Tuple[int, str], str] = {}
     seen_invigilators: Dict[Tuple[int, str], str] = {}
     seen_groups: Dict[Tuple[int, str], str] = {}
 
+    assigned_courses = set()
+
     for a in sorted(timetable.assignments, key=lambda x: (x.slot, x.course)):
+        assigned_courses.add(a.course)
+
+        # Slot bounds check
+        if a.slot < FIRST_SLOT:
+            problems.append(
+                f"Exam '{a.course}' has invalid non-positive slot {a.slot}."
+            )
+        if max_slots is not None and a.slot > max_slots:
+            problems.append(
+                f"Exam '{a.course}' is placed in slot {a.slot}, exceeding max allowed slots ({max_slots})."
+            )
+
+        # Resource clash checks
         for table, resource, label in (
             (seen_rooms, a.room, "Room"),
             (seen_invigilators, a.invigilator, "Invigilator"),
@@ -795,4 +825,45 @@ def verify_timetable(timetable: Timetable) -> List[str]:
                 )
             else:
                 table[key] = a.course
+
+    # If analyzer is provided, independently verify against the program's declarations
+    if analyzer is not None:
+        rooms = getattr(analyzer, "rooms", {})
+        invigilators = getattr(analyzer, "invigilators", {})
+        groups = getattr(analyzer, "groups", {})
+        exams = getattr(analyzer, "exams", [])
+
+        # Check all declared exams are present
+        for exam in exams:
+            if exam.course not in assigned_courses:
+                problems.append(f"Declared exam '{exam.course}' is missing from the timetable.")
+
+        # Check assignments against declarations & capacities
+        for a in timetable.assignments:
+            if a.room not in rooms:
+                problems.append(f"Exam '{a.course}' uses undeclared room '{a.room}'.")
+            if a.invigilator not in invigilators:
+                problems.append(f"Exam '{a.course}' uses undeclared invigilator '{a.invigilator}'.")
+            if a.student_group not in groups:
+                problems.append(f"Exam '{a.course}' uses undeclared student group '{a.student_group}'.")
+
+            if a.room in rooms and a.student_group in groups:
+                cap = _as_int(_first_attr(rooms[a.room], ("capacity",), "capacity"), "capacity")
+                size = _as_int(_first_attr(groups[a.student_group], ("size",), "size"), "size")
+                if size > cap:
+                    problems.append(
+                        f"Exam '{a.course}': room '{a.room}' capacity ({cap}) is less than group '{a.student_group}' size ({size})."
+                    )
+
+        # Check pinned slots were not altered
+        exam_dict = {e.course: e for e in exams}
+        for a in timetable.assignments:
+            if a.course in exam_dict:
+                src_exam = exam_dict[a.course]
+                if src_exam.slot != AUTO_SLOT and src_exam.slot != a.slot:
+                    problems.append(
+                        f"Fixed exam '{a.course}' was moved to slot {a.slot} instead of requested slot {src_exam.slot}."
+                    )
+
     return problems
+
