@@ -96,7 +96,7 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
     """
     print("=" * 60)
     print("TimetableLang Compiler Pipeline")
-    print("Lexer -> Parser -> AST -> Semantic Analyzer -> Generator -> Verifier")
+    print("Lexer -> Parser -> AST -> Semantic Analyzer -> IR -> Generator -> Verifier")
     print(f"Source file: {source_path}")
     if max_slots is not None:
         print(f"Available slots: {max_slots}")
