@@ -59,7 +59,16 @@ TimetableLang is a domain-specific language and compiler that translates a timet
                                  │
                                  ▼
                     ┌──────────────────────────┐
-                    │ 5. TIMETABLE GENERATOR  │
+                    │ 5. INTERMEDIATE CODE     │
+                    │                          │
+                    │ • Linear TAC generation  │
+                    │ • Quadruples             │
+                    │   (Op, Arg1, Arg2, Res)  │
+                    └────────────┬─────────────┘
+                                 │
+                                 ▼
+                    ┌──────────────────────────┐
+                    │ 6. TIMETABLE GENERATOR  │
                     │                          │
                     │ • Fixed slots            │
                     │ • AUTO slots (slot 0)    │
@@ -71,7 +80,7 @@ TimetableLang is a domain-specific language and compiler that translates a timet
                                  │
                                  ▼
                     ┌──────────────────────────┐
-                    │ 6. TIMETABLE VERIFIER   │
+                    │ 7. TIMETABLE VERIFIER   │
                     │                          │
                     │ Independently verifies   │
                     │ the generated timetable  │
@@ -79,7 +88,7 @@ TimetableLang is a domain-specific language and compiler that translates a timet
                                  │
                                  ▼
                     ┌──────────────────────────┐
-                    │  7. FINAL TIMETABLE      │
+                    │  8. FINAL TIMETABLE      │
                     │                          │
                     │ Course → Room            │
                     │         → Invigilator    │
@@ -117,16 +126,18 @@ TimetableLang/
 │   ├── ast_nodes.py            # AST node classes (Program, RoomDeclaration, ...)
 │   ├── parser.py               # Recursive-descent parser: tokens -> AST (Phase 1)
 │   ├── semantic_analyzer.py    # Semantic analyzer & symbol tables (Phase 2)
+│   ├── ir_generator.py         # Intermediate Representation (TAC & Quadruples) (Phase 2)
 │   └── timetable_generator.py  # Timetable generator & independent verifier (Phase 3)
 │
 ├── examples/                   # Sample .tt input files (valid, syntax, semantic errors)
-├── tests/                      # Unit & integration test suites (55 tests)
+├── tests/                      # Unit & integration test suites (59 tests)
 │   ├── test_lexer.py
 │   ├── test_parser.py
 │   ├── test_semantic_analyzer.py
+│   ├── test_ir_generator.py
 │   └── test_timetable_generator.py
 │
-├── main.py                     # Compiler driver (Pipeline Stages 1 to 7)
+├── main.py                     # Compiler driver (Pipeline Stages 1 to 8)
 ├── README.md
 └── requirements.txt
 ```

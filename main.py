@@ -35,13 +35,16 @@ Architecture & Pipeline:
     [4] SEMANTIC ANALYSIS    (src/semantic_analyzer.py)  -- Phase 2
            │ Validated AST + Symbol Tables
            ▼
-    [5] TIMETABLE GENERATOR  (src/timetable_generator.py)-- Phase 3
+    [5] INTERMEDIATE CODE    (src/ir_generator.py)        -- Phase 2
+           │ TAC & Quadruples Representation
+           ▼
+    [6] TIMETABLE GENERATOR  (src/timetable_generator.py)-- Phase 3
            │ Generated Timetable (Backtracking + Constraints)
            ▼
-    [6] TIMETABLE VERIFIER   (src/timetable_generator.py)-- Phase 3
+    [7] TIMETABLE VERIFIER   (src/timetable_generator.py)-- Phase 3
            │ Independent Conflict & Constraint Verification
            ▼
-    [7] FINAL EXAMINATION TIMETABLE
+    [8] FINAL EXAMINATION TIMETABLE
 
 Each phase serves as a strict gate: if any phase fails, compilation aborts
 immediately with a descriptive error message.
@@ -63,6 +66,10 @@ from src.semantic_analyzer import (
     SemanticAnalyzer,
     SemanticAnalysisError,
     format_symbol_tables,
+)
+from src.ir_generator import (
+    IRGenerator,
+    format_intermediate_code,
 )
 from src.timetable_generator import (
     TimetableGenerator,
@@ -154,8 +161,16 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
     for line in format_symbol_tables(analyzer).splitlines():
         print(f"      {line}")
 
-    # --- Step 5: Timetable Generation (Phase 3) -----------------------------
-    print("\n[5] TIMETABLE GENERATION")
+    # --- Step 5: Intermediate Code Generation (Phase 2) --------------------
+    print("\n[5] INTERMEDIATE CODE GENERATION (IR / TAC / Quadruples)")
+    ir_generator = IRGenerator(program)
+    ir_generator.generate()
+    print("    INTERMEDIATE CODE: SUCCESS")
+    for line in format_intermediate_code(ir_generator).splitlines():
+        print(f"      {line}")
+
+    # --- Step 6: Timetable Generation (Phase 3) -----------------------------
+    print("\n[6] TIMETABLE GENERATION")
     generator = TimetableGenerator(analyzer, max_slots=max_slots)
     try:
         timetable = generator.generate()
@@ -169,8 +184,8 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
     print("    TIMETABLE GENERATION: SUCCESS")
     print(f"    {len(timetable.assignments)} exam(s) assigned across {len(timetable.slots_used())} slot(s).")
 
-    # --- Step 6: Independent Timetable Verification -----------------------
-    print("\n[6] TIMETABLE VERIFICATION")
+    # --- Step 7: Independent Timetable Verification -----------------------
+    print("\n[7] TIMETABLE VERIFICATION")
     violations = verify_timetable(timetable, analyzer=analyzer, max_slots=max_slots)
     if violations:
         print("    TIMETABLE VERIFICATION: FAILED")
@@ -181,8 +196,8 @@ def run_compiler(source_path: str, max_slots: int = None) -> bool:
 
     print("    TIMETABLE VERIFICATION: SUCCESS (0 conflicts or violations detected)")
 
-    # --- Step 7: Final Timetable Output ------------------------------------
-    print("\n[7] FINAL EXAMINATION TIMETABLE\n")
+    # --- Step 8: Final Timetable Output ------------------------------------
+    print("\n[8] FINAL EXAMINATION TIMETABLE\n")
     print(format_timetable(timetable))
 
     print("\n    Slot-by-slot view:")

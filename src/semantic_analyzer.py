@@ -445,12 +445,12 @@ def format_symbol_tables(analyzer: SemanticAnalyzer) -> str:
     # Rooms
     # --------------------------------------------------------------
 
-    lines.append("Rooms:")
+    lines.append("Rooms (Type: ROOM, Scope: GLOBAL):")
 
     if analyzer.rooms:
         for name, room in analyzer.rooms.items():
             lines.append(
-                f"  {name} -> capacity {room.capacity}"
+                f"  {name:<12} -> Type: ROOM, Capacity: {room.capacity}"
             )
     else:
         lines.append("  (none declared)")
@@ -459,11 +459,11 @@ def format_symbol_tables(analyzer: SemanticAnalyzer) -> str:
     # Invigilators
     # --------------------------------------------------------------
 
-    lines.append("Invigilators:")
+    lines.append("Invigilators (Type: INVIGILATOR, Scope: GLOBAL):")
 
     if analyzer.invigilators:
         for name in analyzer.invigilators:
-            lines.append(f"  {name}")
+            lines.append(f"  {name:<12} -> Type: INVIGILATOR")
     else:
         lines.append("  (none declared)")
 
@@ -471,12 +471,12 @@ def format_symbol_tables(analyzer: SemanticAnalyzer) -> str:
     # Student Groups
     # --------------------------------------------------------------
 
-    lines.append("Student Groups:")
+    lines.append("Student Groups (Type: STUDENT_GROUP, Scope: GLOBAL):")
 
     if analyzer.groups:
         for name, group in analyzer.groups.items():
             lines.append(
-                f"  {name} -> size {group.size}"
+                f"  {name:<12} -> Type: STUDENT_GROUP, Size: {group.size}"
             )
     else:
         lines.append("  (none declared)")
@@ -485,17 +485,17 @@ def format_symbol_tables(analyzer: SemanticAnalyzer) -> str:
     # Exams
     # --------------------------------------------------------------
 
-    lines.append("Exams:")
+    lines.append("Exams (Type: EXAM_EVENT, Scope: GLOBAL):")
 
     if analyzer.exams:
         for exam in analyzer.exams:
             slot_display = f"{exam.slot} (AUTO)" if exam.slot == AUTO_SLOT else f"{exam.slot}"
             lines.append(
-                f"  {exam.course}: "
-                f"room={exam.room}, "
-                f"invigilator={exam.invigilator}, "
-                f"students={exam.students}, "
-                f"slot={slot_display}"
+                f"  {exam.course:<12} -> Type: EXAM_EVENT, "
+                f"Room: {exam.room}, "
+                f"Invigilator: {exam.invigilator}, "
+                f"Group: {exam.students}, "
+                f"Slot: {slot_display}"
             )
     else:
         lines.append("  (none declared)")

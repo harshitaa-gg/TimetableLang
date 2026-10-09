@@ -8,6 +8,7 @@ Components:
   - ast_nodes.py           : Abstract Syntax Tree node classes (Phase 1)
   - parser.py              : Recursive-descent parser (tokens -> AST) (Phase 1)
   - semantic_analyzer.py   : Semantic analyzer & Symbol Tables (Phase 2)
+  - ir_generator.py        : Intermediate Representation (TAC & Quadruples) (Phase 2)
   - timetable_generator.py : Constraint-aware generator & verifier (Phase 3)
 """
 
@@ -27,6 +28,12 @@ from .semantic_analyzer import (
     SemanticAnalysisError,
     format_symbol_tables,
     AUTO_SLOT,
+)
+from .ir_generator import (
+    IRGenerator,
+    Quadruple,
+    IRInstruction,
+    format_intermediate_code,
 )
 from .timetable_generator import (
     TimetableGenerator,
@@ -55,6 +62,10 @@ __all__ = [
     "SemanticAnalysisError",
     "format_symbol_tables",
     "AUTO_SLOT",
+    "IRGenerator",
+    "Quadruple",
+    "IRInstruction",
+    "format_intermediate_code",
     "TimetableGenerator",
     "TimetableGenerationError",
     "Timetable",
