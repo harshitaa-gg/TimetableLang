@@ -232,6 +232,17 @@ class TestIndependentVerifier(unittest.TestCase):
         problems = verify_timetable(t)
         self.assertTrue(any("invalid non-positive slot 0" in p for p in problems))
 
+    def test_verifier_passes_on_valid_output(self):
+        t = Timetable(
+            assignments=[
+                Assignment("CS101", "hall_a", "prof_x", "cse_a", 1),
+                Assignment("CS102", "hall_b", "prof_y", "cse_b", 1),
+            ],
+            slot_count=1,
+        )
+        problems = verify_timetable(t)
+        self.assertEqual(problems, [])
+
 
 class TestIntegrationExampleFiles(unittest.TestCase):
 

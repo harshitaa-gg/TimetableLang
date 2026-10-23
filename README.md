@@ -130,7 +130,7 @@ TimetableLang/
 │   └── timetable_generator.py  # Timetable generator & independent verifier (Phase 3)
 │
 ├── examples/                   # Sample .tt input files (valid, syntax, semantic errors)
-├── tests/                      # Unit & integration test suites (59 tests)
+├── tests/                      # Unit & integration test suites (61 tests)
 │   ├── test_lexer.py
 │   ├── test_parser.py
 │   ├── test_semantic_analyzer.py
@@ -171,8 +171,9 @@ python main.py examples/valid_auto.tt --max-slots 2
 python -m unittest discover tests -v
 ```
 
-All 55 unit and integration tests verify:
-- **Lexer** (`test_lexer.py`): tokens, identifiers, keywords, position tracking, invalid chars.
+All 61 unit and integration tests verify:
+- **Lexer** (`test_lexer.py`): tokens, identifiers, keywords, position tracking, comments (`#`), invalid chars.
 - **Parser** (`test_parser.py`): valid grammars, syntax error reporting with exact line/column.
 - **Semantic Analyzer** (`test_semantic_analyzer.py`): duplicate checks, undeclared references, capacity violations, resource double-booking.
+- **Intermediate Code** (`test_ir_generator.py`): Quadruple generation and TAC string serialization.
 - **Timetable Generator & Verifier** (`test_timetable_generator.py`): fixed slots, auto slot 0 assignment, backtracking resolution, slot limit enforcement, and independent conflict verification.

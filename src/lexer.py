@@ -143,6 +143,12 @@ class Lexer:
                 tokens.append(Token(TokenType.EOF, None, self.line, self.column))
                 break
 
+            # Comments starting with '#' go until the end of the line
+            if char == "#":
+                while self._current_char() is not None and self._current_char() != "\n":
+                    self._advance()
+                continue
+
             if char == ";":
                 line, column = self.line, self.column
                 self._advance()

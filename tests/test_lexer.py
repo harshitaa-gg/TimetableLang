@@ -69,6 +69,12 @@ class TestLexer(unittest.TestCase):
             ],
         )
 
+    def test_comments_are_ignored(self):
+        source = "# This is a comment\nroom hall_a capacity 100; # inline comment\ninvigilator prof_x;"
+        tokens = Lexer(source).tokenize()
+        values = [t.value for t in tokens if t.type != TokenType.EOF]
+        self.assertEqual(values, ["room", "hall_a", "capacity", 100, ";", "invigilator", "prof_x", ";"])
+
     def test_empty_source_produces_only_eof(self):
         tokens = Lexer("").tokenize()
         self.assertEqual(len(tokens), 1)
