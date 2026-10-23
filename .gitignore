@@ -15,3 +15,12 @@ env/
 # Test / coverage artifacts
 .pytest_cache/
 .coverage
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.vercel/
+.env
+.env.local
+.env.*.local

@@ -138,30 +138,65 @@ TimetableLang/
 │   └── test_timetable_generator.py
 │
 ├── main.py                     # Compiler driver (Pipeline Stages 1 to 8)
+├── api_server.py               # Local HTTP API server for compiler execution
+├── api/
+│   └── compile.py              # Vercel serverless function entrypoint
+├── frontend/                   # React + TypeScript + Vite web playground
+│   ├── src/
+│   │   ├── App.tsx             # Interactive playground with full pipeline visualization
+│   │   ├── api.ts              # API client connecting to /api/compile
+│   │   ├── types.ts            # Type definitions for compiler stages and output
+│   │   ├── examples.ts         # Pre-loaded valid & invalid .tt examples
+│   │   └── index.css           # Modern dark-theme UI styling
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.ts
+├── vercel.json                 # Vercel deployment configuration
 ├── README.md
 └── requirements.txt
 ```
 
 ---
 
-## 4. How to Run the Compiler
+## 4. How to Run the Compiler & Web Playground
 
-Requirements: **Python 3.8+** (standard library only).
+Requirements: **Python 3.8+** (standard library only) and **Node.js 18+** (for web frontend).
 
-### Basic Run
+### 4.1 CLI Execution
 ```bash
+# Basic run on a sample file
 python main.py examples/valid_small.tt
-```
 
-### With AUTO Slots
-```bash
+# With AUTO slot allocation (slot 0)
 python main.py examples/valid_auto.tt
-```
 
-### Limiting Maximum Slots
-```bash
+# Limiting maximum available slots
 python main.py examples/valid_auto.tt --max-slots 2
 ```
+
+### 4.2 Local Web Playground
+To run the interactive compiler UI locally:
+
+1. **Start the Python API server** (in terminal 1):
+   ```bash
+   python api_server.py
+   # Runs on http://localhost:8000
+   ```
+
+2. **Start the Frontend development server** (in terminal 2):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   # Opens in browser (typically http://localhost:5173)
+   ```
+
+3. **Deploying on Vercel**:
+   - The repository root includes `vercel.json` routing both serverless API functions (`/api/compile`) and static assets.
+   - Root directory: `./`
+   - Build command: `cd frontend && npm install && npm run build`
+   - Output directory: `frontend/dist`
+   - Optional environment variable: `VITE_API_BASE_URL` (leave blank when deployed on the same domain as Vercel).
 
 ---
 
